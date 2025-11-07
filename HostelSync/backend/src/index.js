@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
+const transportRoutes = require('./routes/transport');
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
@@ -26,6 +27,7 @@ testConnection();
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/transport', transportRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
