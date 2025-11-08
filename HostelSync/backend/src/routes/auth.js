@@ -139,8 +139,9 @@ function authorizeRole(roles = []) {
   };
 }
 
+// Export the router
 module.exports = router;
 
-// Export middleware for use in other routes
+// Export middleware functions separately
 module.exports.authenticateToken = authenticateToken;
 module.exports.authorizeRole = authorizeRole;

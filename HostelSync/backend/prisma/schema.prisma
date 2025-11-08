@@ -7,19 +7,173 @@ datasource db {
   url  	    = env("DATABASE_URL")
 }
 
+// Water Supply Maintenance Models
+model WaterIssue {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String
+  location    String
+  status      IssueStatus @default(PENDING)
+  priority    Priority    @default(MEDIUM)
+  reportedBy  User        @relation("ReportedIssues", fields: [userId], references: [id])
+  userId      Int
+  assignedTo  User?       @relation("AssignedIssues", fields: [plumberId], references: [id])
+  plumberId   Int?
+  images      String[]    // URLs to uploaded images
+  comments    Comment[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model WaterQualityReport {
+  id          Int       @id @default(autoincrement())
+  testedBy    User      @relation(fields: [testedById], references: [id])
+  testedById  Int
+  phLevel     Float
+  tds         Int       // Total Dissolved Solids
+  chlorine    Float
+  isSafe      Boolean
+  notes       String?
+  testedAt    DateTime  @default(now())
+}
+
+model NetworkIssue {
+  id          Int               @id @default(autoincrement())
+  title       String
+  description String
+  issueType   NetworkIssueType
+  status      NetworkIssueStatus @default(OPEN)
+  priority    NetworkIssuePriority @default(MEDIUM)
+  ipAddress   String?
+  macAddress  String?
+  speedTest   Json?             // Store speed test results
+  reportedBy  User              @relation("ReportedNetworkIssues", fields: [userId], references: [id])
+  userId      Int
+  assignedTo  User?             @relation("AssignedNetworkIssues", fields: [assignedToId], references: [id])
+  assignedToId Int?
+  comments    NetworkComment[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model NetworkComment {
+  id        Int         @id @default(autoincrement())
+  content   String
+  issue     NetworkIssue @relation(fields: [issueId], references: [id])
+  issueId   Int
+  author    User        @relation(fields: [authorId], references: [id])
+  authorId  Int
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model NetworkMaintenance {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  startTime   DateTime
+  endTime     DateTime
+  isActive    Boolean   @default(true)
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdById Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model CleaningRequest {
+  id                  Int           @id @default(autoincrement())
+  student             User          @relation("StudentCleaningRequests", fields: [studentId], references: [id])
+  studentId           Int
+  room                String
+  building            String
+  cleaningType        CleaningType
+  status              CleaningStatus @default(PENDING)
+  scheduledDate       DateTime
+  timeSlot            String
+  specialInstructions String?
+  cleaner             User?         @relation("CleanerAssignments", fields: [cleanerId], references: [id])
+  cleanerId           Int?
+  rating              Int?          @db.SmallInt
+  feedback            String?
+  completedAt         DateTime?
+  cancelledAt         DateTime?
+  cancelledReason     String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([studentId])
+  @@index([cleanerId])
+  @@index([scheduledDate])
+  @@index([status])
+}
+
+model WaterSupplySchedule {
+  id          Int       @id @default(autoincrement())
+  startTime   DateTime
+  endTime     DateTime
+  location    String    // Hostel/Block name
+  isActive    Boolean   @default(true)
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdById Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  content   String
+  issue     WaterIssue @relation(fields: [issueId], references: [id])
+  issueId   Int
+  user      User      @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime  @default(now())
+}
+
+enum IssueStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(STUDENT)
-  hostelId  Int?
-  roomNo    String?
-  complaints Complaint[]
-  bookings   TransportBooking[]
-  feedbacks  FoodFeedback[]
-  cleaningRequests CleaningRequest[]
-  createdAt DateTime @default(now())
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  email              String              @unique
+  password           String
+  role               Role                @default(STUDENT)
+  hostelId           Int?
+  roomNo             String?
+  complaints        Complaint[]
+  bookings          TransportBooking[]
+  feedbacks         MealFeedback[]
+  
+  // Water Module Relations
+  reportedIssues       WaterIssue[]         @relation("ReportedIssues")
+  assignedIssues       WaterIssue[]         @relation("AssignedIssues")
+  qualityTests         WaterQualityReport[]
+  createdSchedules     WaterSupplySchedule[]
+  waterComments        Comment[]
+  
+  // Network Module Relations
+  reportedNetworkIssues  NetworkIssue[]      @relation("ReportedNetworkIssues")
+  assignedNetworkIssues  NetworkIssue[]      @relation("AssignedNetworkIssues")
+  networkComments        NetworkComment[]
+  createdMaintenances    NetworkMaintenance[]
+  
+  // Cleaning Module Relations
+  cleaningRequests       CleaningRequest[]   @relation("StudentCleaningRequests")
+  cleaningAssignments    CleaningRequest[]   @relation("CleanerAssignments")
+  
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt @default(now())
 }
 
 enum Role {
@@ -27,24 +181,88 @@ enum Role {
   WARDEN
   STAFF
   ADMIN
+  PLUMBER
+  IT_STAFF
+  CLEANER
+}
+
+enum CleaningType {
+  REGULAR
+  DEEP
+  SPECIAL
+}
+
+enum CleaningStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum NetworkIssueStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
+}
+
+enum NetworkIssuePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum NetworkIssueType {
+  CONNECTIVITY
+  SPEED
+  AUTHENTICATION
+  OTHER
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SPECIAL
 }
 
 model MessMenu {
-  id       Int      @id @default(autoincrement())
-  day      String
-  mealType String
-  items    String
+  id               Int             @id @default(autoincrement())
+  date             DateTime        @default(now())
+  mealType         MealType
+  servingTime      String?         // Format: HH:MM
+  items            String          // JSON string of {name: string, type: 'VEG' | 'NON_VEG' | 'JAIN' | 'SPECIAL'}[]
+  isRecurring      Boolean         @default(false)
+  recurrenceRule   String?         // RRULE format for recurring events
+  recurrenceEndsAt DateTime?       // When the recurrence should end
+  baseMenuId       Int?            // For tracking recurring series
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  feedbacks        MealFeedback[]
+  
+  @@unique([date, mealType])
 }
 
-model FoodFeedback {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
+model MealFeedback {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id])
   userId    Int
+  menu      MessMenu  @relation(fields: [menuId], references: [id])
+  menuId    Int
   rating    Int
   comment   String?
-  date      DateTime @default(now())
+  photoUrl  String?   // URL to the uploaded photo
+  status    String    @default("PENDING") // PENDING, REVIEWED, RESOLVED
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  @@index([menuId])
+  @@index([userId])
 }
 
+// Generic complaint model for all types of complaints
 model Complaint {
   id           Int      @id @default(autoincrement())
   user         User     @relation(fields: [userId], references: [id])
@@ -57,23 +275,98 @@ model Complaint {
   createdAt    DateTime @default(now())
 }
 
+// Transport Module Models
+
 model Vehicle {
-  id       Int    @id @default(autoincrement())
-  type     String
-  route    String
-  capacity Int
-  driver   String
-  bookings TransportBooking[]
+  id          Int                @id @default(autoincrement())
+  type        String             // e.g., 'Bus', 'Van', 'Car'
+  number      String             @unique
+  capacity    Int
+  status      VehicleStatus      @default(AVAILABLE) // AVAILABLE, IN_MAINTENANCE, UNAVAILABLE
+  driver      Driver?            @relation(fields: [driverId], references: [id])
+  driverId    Int?
+  bookings    TransportBooking[]
+  routes      Route[]
+  schedules   Schedule[]         // Added relation to Schedule
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  IN_MAINTENANCE
+  UNAVAILABLE
+}
+
+model Driver {
+  id          Int       @id @default(autoincrement())
+  name        String
+  licenseNo   String    @unique
+  phone       String
+  email       String?   @unique
+  vehicles    Vehicle[]
+  isAvailable Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Route {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  startPoint  String
+  endPoint    String
+  stops       String[]  // Array of stop names
+  vehicles    Vehicle[]
+  schedules   Schedule[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Schedule {
+  id          Int                @id @default(autoincrement())
+  route       Route              @relation(fields: [routeId], references: [id])
+  routeId     Int
+  vehicle     Vehicle            @relation(fields: [vehicleId], references: [id])
+  vehicleId   Int
+  day         String             // e.g., 'MONDAY', 'TUESDAY'
+  startTime   String             // e.g., '08:00' (24-hour format)
+  endTime     String             // e.g., '17:00' (24-hour format)
+  startDate   DateTime
+  endDate     DateTime
+  maxCapacity Int
+  price       Float
+  isActive    Boolean            @default(true)
+  bookings    TransportBooking[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  
+  @@unique([routeId, day, startTime, vehicleId])
 }
 
 model TransportBooking {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
-  vehicleId Int
-  status    String   @default("BOOKED")
-  date      DateTime @default(now())
+  id          Int           @id @default(autoincrement())
+  user        User          @relation(fields: [userId], references: [id])
+  userId      Int
+  vehicle     Vehicle       @relation(fields: [vehicleId], references: [id])
+  vehicleId   Int
+  schedule    Schedule      @relation(fields: [scheduleId], references: [id])
+  scheduleId  Int
+  status      BookingStatus @default(PENDING)
+  bookingDate DateTime      // Date for which booking is made
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  @@unique([userId, scheduleId, bookingDate])
+  
+  // BookingStatus enum is defined below
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
 }
 
 model CleaningSchedule {
@@ -81,14 +374,4 @@ model CleaningSchedule {
   block    String
   day      String
   staffId  Int?
-}
-
-model CleaningRequest {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  roomNo    String
-  issue     String
-  status    String   @default("PENDING")
-  date      DateTime @default(now())
 }
