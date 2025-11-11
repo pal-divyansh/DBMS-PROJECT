@@ -10,7 +10,9 @@ const {
   getUserBookings,
   cancelBooking,
   addSchedule,
-  deleteVehicle
+  deleteVehicle,
+  addVehicle,
+  addRoute
 } = require('../modules/Transport/controllers/transport.controller');
 const {
   createBookingSchema,
@@ -70,8 +72,7 @@ router.post(
       return res.status(400).json({ error: error.message });
     }
   },
-  // Add your route creation controller here
-  (req, res) => res.status(501).json({ message: 'Not implemented' })
+  addRoute
 );
 
 // In src/routes/transport.js
@@ -107,8 +108,7 @@ router.post(
       return res.status(400).json({ error: error.message });
     }
   },
-  // Add your vehicle creation controller here
-  (req, res) => res.status(501).json({ message: 'Not implemented' })
+  addVehicle
 );
 
 // Delete vehicle (Admin/Staff)

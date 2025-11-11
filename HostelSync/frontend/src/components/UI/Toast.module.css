@@ -1,0 +1,6 @@
+.wrap { position: fixed; top: 16px; right: 16px; z-index: 1000; }
+.toast { padding: 10px 14px; border-radius: 8px; color: #0f172a; background: #ecfeff; border: 1px solid #a5f3fc; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); animation: toastIn .18s ease-out both; }
+.success { background: #ecfdf5; border-color: #86efac; }
+.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+
+@keyframes toastIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }

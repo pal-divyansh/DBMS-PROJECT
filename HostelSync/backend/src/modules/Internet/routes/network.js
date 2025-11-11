@@ -9,6 +9,7 @@ const {
   updateIssueStatus,
   addComment,
   getComments,
+  getItStaff,
 } = require('../controllers/network.controller');
 const {
   reportIssueSchema,
@@ -60,5 +61,8 @@ router.post(
 
 // Get issue comments
 router.get('/issues/:id/comments', authenticateToken, getComments);
+
+// List IT staff (Admin only)
+router.get('/it-staff', authenticateToken, authorizeRole(['ADMIN']), getItStaff);
 
 module.exports = router;
