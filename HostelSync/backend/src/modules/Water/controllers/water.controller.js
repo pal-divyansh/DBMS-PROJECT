@@ -41,7 +41,8 @@ const getIssues = async (req, res) => {
     if (req.user.role === "STUDENT") {
       where.userId = req.user.id;
     } else if (req.user.role === "PLUMBER") {
-      where.OR = [{ plumberId: req.user.id }, { status: "PENDING" }];
+      // Plumbers should only see issues assigned to them
+      where.plumberId = req.user.id;
     }
 
     const issues = await prisma.waterIssue.findMany({
@@ -107,9 +108,25 @@ const updateIssueStatus = async (req, res) => {
   }
 };
 
+// List all plumbers (admin only)
+const getPlumbers = async (_req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { role: 'PLUMBER' },
+      select: { id: true, name: true, email: true },
+      orderBy: { name: 'asc' }
+    });
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching plumbers:', error);
+    res.status(500).json({ error: 'Failed to fetch plumbers' });
+  }
+};
+
 // Export the functions as an object
 module.exports = {
   reportIssue,
   getIssues,
   updateIssueStatus,
+  getPlumbers,
 };

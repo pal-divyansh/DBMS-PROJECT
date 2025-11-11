@@ -39,16 +39,22 @@ const reportIssue = async (req, res) => {
 const getIssues = async (req, res) => {
   try {
     const { status, type } = req.query;
-    const where = { userId: req.user.id };
-    
+    const where = {};
+
     if (status) where.status = status;
     if (type) where.issueType = type;
 
-    // IT staff can see all issues
-    if (req.user.role === 'IT_STAFF' || req.user.role === 'ADMIN') {
-      delete where.userId;
-      if (status) where.status = status;
-      if (type) where.issueType = type;
+    // Role-based scoping
+    if (req.user.role === 'STUDENT') {
+      where.userId = req.user.id;
+    } else if (req.user.role === 'IT_STAFF') {
+      // IT staff should only see issues assigned to them
+      where.assignedToId = req.user.id;
+    } else if (req.user.role === 'ADMIN') {
+      // Admin can see all; no additional scoping
+    } else {
+      // Default safe behavior: only own created issues
+      where.userId = req.user.id;
     }
 
     const issues = await prisma.networkIssue.findMany({
@@ -229,10 +235,26 @@ const getComments = async (req, res) => {
   }
 };
 
+// List all IT staff (admin only)
+const getItStaff = async (_req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { role: 'IT_STAFF' },
+      select: { id: true, name: true, email: true },
+      orderBy: { name: 'asc' },
+    });
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching IT staff:', error);
+    res.status(500).json({ error: 'Failed to fetch IT staff' });
+  }
+};
+
 module.exports = {
   reportIssue,
   getIssues,
   updateIssueStatus,
   addComment,
   getComments,
+  getItStaff,
 };

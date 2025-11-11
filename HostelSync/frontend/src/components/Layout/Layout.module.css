@@ -1,0 +1,9 @@
+.layout { display: flex; flex-direction: column; height: 100vh; }
+.body { display: flex; flex: 1; padding-top: 56px; }
+.main { flex: 1; background: var(--color-background); padding: var(--space-6); overflow: auto; }
+.contentWrap { background: #ffffff; color: #0f172a; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 10px 15px -3px rgba(0,0,0,0.05); padding: var(--space-6); min-height: calc(100vh - 56px - var(--space-6)*2); }
+
+@media (max-width: 768px) {
+  .main { padding: var(--space-4); }
+  .contentWrap { padding: var(--space-4); }
+}

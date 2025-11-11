@@ -43,4 +43,12 @@ router.patch(
   waterController.updateIssueStatus
 );
 
+// List plumbers (Admin only)
+router.get(
+  "/plumbers",
+  authenticate,
+  authorize(["ADMIN"]),
+  waterController.getPlumbers
+);
+
 module.exports = router;

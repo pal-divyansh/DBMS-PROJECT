@@ -1,0 +1,12 @@
+.sidebar { position: sticky; top: 56px; height: calc(100vh - 56px); width: 220px; background: #ffffff; color: #0f172a; border-right: 1px solid rgba(0,0,0,0.06); padding: var(--space-4) var(--space-2); transition: width 0.2s ease; overflow: auto; }
+.collapsed { width: 64px; }
+.nav { display: flex; flex-direction: column; gap: 4px; }
+.link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; color: #111827; text-decoration: none; font-weight: 500; }
+.link:hover { background: rgba(79,70,229,0.08); }
+.active { background: rgba(79,70,229,0.15); color: #111827; }
+.icon { width: 20px; text-align: center; }
+.label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 1024px) {
+  .sidebar { position: fixed; left: 0; bottom: 0; top: 56px; z-index: 9; }
+}
